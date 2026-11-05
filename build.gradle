@@ -31,15 +31,12 @@ dependencyManagement {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-	// Spring Cloud Function + adapter AWS: expoe os @Bean Function/Consumer como handlers de Lambda
 	implementation 'org.springframework.cloud:spring-cloud-function-context:4.2.1'
 	implementation 'org.springframework.cloud:spring-cloud-function-adapter-aws:4.2.1'
 
-	// Tipos de evento da Lambda (API Gateway, SQS, EventBridge)
 	implementation 'com.amazonaws:aws-lambda-java-core:1.2.3'
 	implementation 'com.amazonaws:aws-lambda-java-events:3.13.0'
 
-	// AWS SDK v2 - clientes usados pelas 3 funcoes
 	implementation 'software.amazon.awssdk:dynamodb-enhanced'
 	implementation 'software.amazon.awssdk:sqs'
 	implementation 'software.amazon.awssdk:s3'
