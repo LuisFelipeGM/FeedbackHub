@@ -7,10 +7,10 @@ awslocal dynamodb create-table \
   --table-name Avaliacoes \
   --attribute-definitions \
       AttributeName=data,AttributeType=S \
-      AttributeName=avaliacaoId,AttributeType=S \
+      AttributeName=id,AttributeType=S \
   --key-schema \
       AttributeName=data,KeyType=HASH \
-      AttributeName=avaliacaoId,KeyType=RANGE \
+      AttributeName=id,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST
 
 awslocal sqs create-queue --queue-name feedbackhub-notificacoes-criticas-dlq
