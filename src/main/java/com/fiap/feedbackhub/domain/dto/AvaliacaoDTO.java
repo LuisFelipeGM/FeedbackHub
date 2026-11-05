@@ -5,9 +5,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-/**
- * Corpo do POST /avaliacao, conforme especificado no Tech Challenge.
- */
 public record AvaliacaoDTO(
 
         @NotNull(message = "nota é obrigatória")

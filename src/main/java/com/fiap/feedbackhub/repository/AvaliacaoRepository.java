@@ -29,10 +29,6 @@ public class AvaliacaoRepository {
         tabela.putItem(avaliacao);
     }
 
-    /**
-     * Busca as avaliações de um único dia (uma partição). O relatório semanal
-     * chama este método uma vez por dia do intervalo, em vez de fazer Scan.
-     */
     public List<Avaliacao> buscarPorData(LocalDate data) {
         QueryConditional condicao = QueryConditional.keyEqualTo(
                 Key.builder().partitionValue(data.toString()).build());

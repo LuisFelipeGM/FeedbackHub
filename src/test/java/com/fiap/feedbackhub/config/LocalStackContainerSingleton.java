@@ -27,13 +27,6 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SES;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SQS;
 
-/**
- * Container único de LocalStack, subido uma vez por JVM de teste e
- * reaproveitado por todas as classes de IT (repositório hoje, Lambdas depois)
- * — evita subir um container novo pra cada classe de teste. Os recursos
- * (tabela, filas, bucket, identidade SES) são criados aqui via SDK, não por
- * script — fonte única em Java, sem depender do docker-compose local.
- */
 public final class LocalStackContainerSingleton {
 
     private static final String TABELA_AVALIACOES = "Avaliacoes";
