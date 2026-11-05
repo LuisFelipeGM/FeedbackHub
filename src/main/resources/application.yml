@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: feedbackhub
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  dynamodb:
+    tabela-avaliacoes: ${DYNAMODB_TABLE_AVALIACOES:Avaliacoes}
+  sqs:
+    fila-notificacoes-criticas: ${SQS_QUEUE_NOTIFICACOES_CRITICAS:feedbackhub-notificacoes-criticas}
+  s3:
+    bucket-relatorios: ${S3_BUCKET_RELATORIOS:feedbackhub-relatorios}
+  ses:
+    remetente: ${SES_REMETENTE:admin@feedbackhub.local}
+    destinatario-admin: ${SES_DESTINATARIO_ADMIN:admin@feedbackhub.local}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+aws:
+  endpoint-override: http://localhost:4566
