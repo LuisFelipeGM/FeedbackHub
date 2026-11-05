@@ -1,0 +1,28 @@
+services:
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: feedbackhub_localstack
+    restart: always
+    ports:
+      - "${LOCALSTACK_PORT:-4566}:4566"
+    environment:
+      SERVICES: dynamodb,sqs,s3,ses,scheduler
+      DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      DEBUG: 1
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./docker/localstack/init:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - feedbackhub_network
+
+volumes:
+  localstack_data:
+
+networks:
+  feedbackhub_network:
+    driver: bridge
