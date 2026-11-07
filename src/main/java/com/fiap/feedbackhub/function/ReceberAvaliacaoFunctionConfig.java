@@ -15,12 +15,6 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Set;
 import java.util.function.Function;
 
-/**
- * Adapter da Lambda ReceberAvaliacao: traduz o evento do API Gateway pra
- * chamada do AvaliacaoService. O roteamento POST /avaliacao -> esta Lambda é
- * feito na infraestrutura (API Gateway), não aqui — essa função não tem rota,
- * só faz essa única coisa.
- */
 @Configuration
 public class ReceberAvaliacaoFunctionConfig {
 
