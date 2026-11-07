@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 @Configuration
-public class ReceberAvaliacaoFunctionConfig {
+public class ReceberAvaliacaoFunction {
 
     @Bean
     public Function<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> receberAvaliacao(

@@ -24,7 +24,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class ReceberAvaliacaoFunctionConfigTest {
+class ReceberAvaliacaoFunctionTest {
 
     @Mock
     private AvaliacaoService avaliacaoService;
@@ -35,7 +35,7 @@ class ReceberAvaliacaoFunctionConfigTest {
     void setup() {
         ObjectMapper objectMapper = new ObjectMapper();
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-        receberAvaliacao = new ReceberAvaliacaoFunctionConfig()
+        receberAvaliacao = new ReceberAvaliacaoFunction()
                 .receberAvaliacao(objectMapper, validator, avaliacaoService);
     }
 
