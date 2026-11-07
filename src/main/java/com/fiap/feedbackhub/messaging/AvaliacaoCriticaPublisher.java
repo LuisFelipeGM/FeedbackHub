@@ -10,25 +10,21 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-
 @Component
 public class AvaliacaoCriticaPublisher {
 
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
-    private final String filaUrl;
+    private final String queueName;
 
     public AvaliacaoCriticaPublisher(
             SqsClient sqsClient,
             ObjectMapper objectMapper,
-            @Value("${aws.sqs.fila-notificacoes-criticas}") String filaNome
+            @Value("${aws.sqs.fila-notificacoes-criticas}") String queueName
     ) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
-        this.filaUrl = sqsClient.getQueueUrl(GetQueueUrlRequest.builder()
-                        .queueName(filaNome)
-                        .build())
-                .queueUrl();
+        this.queueName = queueName;
     }
 
     public void publicar(Avaliacao avaliacao) {
@@ -40,6 +36,11 @@ public class AvaliacaoCriticaPublisher {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Falha ao serializar notificação crítica", e);
         }
+
+        String filaUrl = sqsClient.getQueueUrl(GetQueueUrlRequest.builder()
+                        .queueName(queueName)
+                        .build())
+                .queueUrl();
 
         sqsClient.sendMessage(SendMessageRequest.builder()
                 .queueUrl(filaUrl)
