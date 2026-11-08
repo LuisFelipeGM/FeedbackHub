@@ -43,6 +43,7 @@ dependencies {
 	implementation 'software.amazon.awssdk:s3'
 	implementation 'software.amazon.awssdk:ses'
 	implementation 'software.amazon.awssdk:url-connection-client'
+	implementation 'com.sun.mail:jakarta.mail:2.0.1'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
