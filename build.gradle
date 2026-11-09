@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.1.2'
@@ -64,4 +66,13 @@ tasks.named('test') {
 tasks.named('shadowJar') {
 	archiveClassifier.set('aws')
 	mergeServiceFiles()
+	transform(AppendingTransformer) {
+		resource = 'META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports'
+	}
+	transform(AppendingTransformer) {
+		resource = 'META-INF/spring.factories'
+	}
+	manifest {
+		attributes 'Start-Class': 'com.fiap.feedbackhub.FeedbackhubApplication'
+	}
 }
