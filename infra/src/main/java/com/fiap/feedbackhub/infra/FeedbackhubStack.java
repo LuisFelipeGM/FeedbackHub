@@ -1,18 +1,27 @@
 package com.fiap.feedbackhub.infra;
 
+import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+import software.amazon.awscdk.services.apigateway.Resource;
+import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.events.CronOptions;
+import software.amazon.awscdk.services.events.Rule;
+import software.amazon.awscdk.services.events.Schedule;
+import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.DockerImageFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -37,6 +46,10 @@ public class FeedbackhubStack extends Stack {
     private final String emailAdmin;
     private final DockerImageCode imagemLambda;
 
+    private DockerImageFunction funcaoReceberAvaliacao;
+    private DockerImageFunction funcaoNotificarCritico;
+    private DockerImageFunction funcaoGerarRelatorioSemanal;
+
     public FeedbackhubStack(final Construct scope, final String id) {
         this(scope, id, null);
     }
@@ -56,6 +69,9 @@ public class FeedbackhubStack extends Stack {
         criarFuncaoReceberAvaliacao();
         criarFuncaoNotificarCritico();
         criarFuncaoGerarRelatorioSemanal();
+
+        criarApiGateway();
+        criarAgendamentoRelatorioSemanal();
     }
 
     private Table criarTabelaAvaliacoes() {
@@ -115,45 +131,73 @@ public class FeedbackhubStack extends Stack {
     }
 
     private void criarFuncaoReceberAvaliacao() {
-        DockerImageFunction funcao = DockerImageFunction.Builder.create(this, "ReceberAvaliacaoFunction")
+        funcaoReceberAvaliacao = DockerImageFunction.Builder.create(this, "ReceberAvaliacaoFunction")
                 .code(imagemLambda)
                 .memorySize(512)
                 .timeout(Duration.seconds(30))
                 .environment(variaveisAmbienteComuns())
                 .build();
 
-        funcao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "receberAvaliacao");
+        funcaoReceberAvaliacao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "receberAvaliacao");
 
-        tabelaAvaliacoes.grantWriteData(funcao);
-        filaNotificacoesCriticas.grantSendMessages(funcao);
+        tabelaAvaliacoes.grantWriteData(funcaoReceberAvaliacao);
+        filaNotificacoesCriticas.grantSendMessages(funcaoReceberAvaliacao);
     }
 
     private void criarFuncaoNotificarCritico() {
-        DockerImageFunction funcao = DockerImageFunction.Builder.create(this, "NotificarCriticoFunction")
+        funcaoNotificarCritico = DockerImageFunction.Builder.create(this, "NotificarCriticoFunction")
                 .code(imagemLambda)
                 .memorySize(512)
                 .timeout(Duration.seconds(30))
                 .environment(variaveisAmbienteComuns())
                 .build();
 
-        funcao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "notificarCritico");
+        funcaoNotificarCritico.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "notificarCritico");
 
-        concederPermissaoSes(funcao);
+        funcaoNotificarCritico.addEventSource(SqsEventSource.Builder.create(filaNotificacoesCriticas)
+                .batchSize(10)
+                .build());
+
+        concederPermissaoSes(funcaoNotificarCritico);
     }
 
     private void criarFuncaoGerarRelatorioSemanal() {
-        DockerImageFunction funcao = DockerImageFunction.Builder.create(this, "GerarRelatorioSemanalFunction")
+        funcaoGerarRelatorioSemanal = DockerImageFunction.Builder.create(this, "GerarRelatorioSemanalFunction")
                 .code(imagemLambda)
                 .memorySize(512)
                 .timeout(Duration.seconds(60))
                 .environment(variaveisAmbienteComuns())
                 .build();
 
-        funcao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "gerarRelatorioSemanal");
+        funcaoGerarRelatorioSemanal.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "gerarRelatorioSemanal");
 
-        tabelaAvaliacoes.grantReadData(funcao);
-        bucketRelatorios.grantWrite(funcao);
-        concederPermissaoSes(funcao);
+        tabelaAvaliacoes.grantReadData(funcaoGerarRelatorioSemanal);
+        bucketRelatorios.grantWrite(funcaoGerarRelatorioSemanal);
+        concederPermissaoSes(funcaoGerarRelatorioSemanal);
+    }
+
+    private void criarApiGateway() {
+        RestApi restApi = RestApi.Builder.create(this, "FeedbackhubRestApi")
+                .restApiName("feedbackhub-api")
+                .build();
+
+        Resource recursoAvaliacao = restApi.getRoot().addResource("avaliacao");
+        recursoAvaliacao.addMethod("POST", new LambdaIntegration(funcaoReceberAvaliacao));
+
+        CfnOutput.Builder.create(this, "UrlApi")
+                .value(restApi.getUrl())
+                .build();
+    }
+
+    private void criarAgendamentoRelatorioSemanal() {
+        Rule.Builder.create(this, "GerarRelatorioSemanalSchedule")
+                .schedule(Schedule.cron(CronOptions.builder()
+                        .weekDay("MON")
+                        .hour("11")
+                        .minute("0")
+                        .build()))
+                .targets(List.of(new LambdaFunction(funcaoGerarRelatorioSemanal)))
+                .build();
     }
 
     private Map<String, String> variaveisAmbienteComuns() {
