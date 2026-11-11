@@ -30,8 +30,8 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 public final class LocalStackContainerSingleton {
 
     private static final String TABELA_AVALIACOES = "Avaliacoes";
-    private static final String FILA_NOTIFICACOES_CRITICAS = "feedbackhub-notificacoes-criticas";
-    private static final String FILA_NOTIFICACOES_CRITICAS_DLQ = "feedbackhub-notificacoes-criticas-dlq";
+    private static final String FILA_NOTIFICACOES_CRITICAS = "sqs-notificacoes-criticas";
+    private static final String FILA_NOTIFICACOES_CRITICAS_DLQ = "dlq-notificacoes-criticas";
     private static final String BUCKET_RELATORIOS = "feedbackhub-relatorios";
     private static final String EMAIL_REMETENTE = "admin@feedbackhub.local";
 

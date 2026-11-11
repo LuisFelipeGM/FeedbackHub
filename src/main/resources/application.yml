@@ -7,7 +7,7 @@ aws:
   dynamodb:
     tabela-avaliacoes: ${DYNAMODB_TABLE_AVALIACOES:Avaliacoes}
   sqs:
-    fila-notificacoes-criticas: ${SQS_QUEUE_NOTIFICACOES_CRITICAS:feedbackhub-notificacoes-criticas}
+    fila-notificacoes-criticas: ${SQS_QUEUE_NOTIFICACOES_CRITICAS:sqs-notificacoes-criticas}
   s3:
     bucket-relatorios: ${S3_BUCKET_RELATORIOS:feedbackhub-relatorios}
   ses:
