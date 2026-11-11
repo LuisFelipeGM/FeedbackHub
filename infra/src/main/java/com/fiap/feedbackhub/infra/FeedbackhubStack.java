@@ -8,6 +8,11 @@ import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.lambda.DockerImageCode;
+import software.amazon.awscdk.services.lambda.DockerImageFunction;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -17,6 +22,10 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class FeedbackhubStack extends Stack {
 
     private static final String EMAIL_ADMIN_PADRAO = "admin@feedbackhub.local";
@@ -25,6 +34,8 @@ public class FeedbackhubStack extends Stack {
     private final Queue filaNotificacoesCriticas;
     private final Queue filaNotificacoesCriticasDlq;
     private final Bucket bucketRelatorios;
+    private final String emailAdmin;
+    private final DockerImageCode imagemLambda;
 
     public FeedbackhubStack(final Construct scope, final String id) {
         this(scope, id, null);
@@ -33,11 +44,18 @@ public class FeedbackhubStack extends Stack {
     public FeedbackhubStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
+        this.emailAdmin = resolverEmailAdmin();
+        this.imagemLambda = DockerImageCode.fromImageAsset("..");
+
         this.tabelaAvaliacoes = criarTabelaAvaliacoes();
         this.filaNotificacoesCriticasDlq = criarFilaNotificacoesCriticasDlq();
         this.filaNotificacoesCriticas = criarFilaNotificacoesCriticas(filaNotificacoesCriticasDlq);
         this.bucketRelatorios = criarBucketRelatorios();
         criarIdentidadeSes();
+
+        criarFuncaoReceberAvaliacao();
+        criarFuncaoNotificarCritico();
+        criarFuncaoGerarRelatorioSemanal();
     }
 
     private Table criarTabelaAvaliacoes() {
@@ -78,7 +96,7 @@ public class FeedbackhubStack extends Stack {
 
     private void criarIdentidadeSes() {
         EmailIdentity.Builder.create(this, "IdentidadeSesAdmin")
-                .identity(Identity.email(resolverEmailAdmin()))
+                .identity(Identity.email(emailAdmin))
                 .build();
     }
 
@@ -94,5 +112,65 @@ public class FeedbackhubStack extends Stack {
         }
 
         return EMAIL_ADMIN_PADRAO;
+    }
+
+    private void criarFuncaoReceberAvaliacao() {
+        DockerImageFunction funcao = DockerImageFunction.Builder.create(this, "ReceberAvaliacaoFunction")
+                .code(imagemLambda)
+                .memorySize(512)
+                .timeout(Duration.seconds(30))
+                .environment(variaveisAmbienteComuns())
+                .build();
+
+        funcao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "receberAvaliacao");
+
+        tabelaAvaliacoes.grantWriteData(funcao);
+        filaNotificacoesCriticas.grantSendMessages(funcao);
+    }
+
+    private void criarFuncaoNotificarCritico() {
+        DockerImageFunction funcao = DockerImageFunction.Builder.create(this, "NotificarCriticoFunction")
+                .code(imagemLambda)
+                .memorySize(512)
+                .timeout(Duration.seconds(30))
+                .environment(variaveisAmbienteComuns())
+                .build();
+
+        funcao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "notificarCritico");
+
+        concederPermissaoSes(funcao);
+    }
+
+    private void criarFuncaoGerarRelatorioSemanal() {
+        DockerImageFunction funcao = DockerImageFunction.Builder.create(this, "GerarRelatorioSemanalFunction")
+                .code(imagemLambda)
+                .memorySize(512)
+                .timeout(Duration.seconds(60))
+                .environment(variaveisAmbienteComuns())
+                .build();
+
+        funcao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "gerarRelatorioSemanal");
+
+        tabelaAvaliacoes.grantReadData(funcao);
+        bucketRelatorios.grantWrite(funcao);
+        concederPermissaoSes(funcao);
+    }
+
+    private Map<String, String> variaveisAmbienteComuns() {
+        Map<String, String> variaveis = new HashMap<>();
+        variaveis.put("DYNAMODB_TABLE_AVALIACOES", tabelaAvaliacoes.getTableName());
+        variaveis.put("SQS_QUEUE_NOTIFICACOES_CRITICAS", filaNotificacoesCriticas.getQueueName());
+        variaveis.put("S3_BUCKET_RELATORIOS", bucketRelatorios.getBucketName());
+        variaveis.put("SES_REMETENTE", emailAdmin);
+        variaveis.put("SES_DESTINATARIO_ADMIN", emailAdmin);
+        return variaveis;
+    }
+
+    private void concederPermissaoSes(IFunction funcao) {
+        funcao.addToRolePolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("ses:SendEmail", "ses:SendRawEmail"))
+                .resources(List.of("*"))
+                .build());
     }
 }
