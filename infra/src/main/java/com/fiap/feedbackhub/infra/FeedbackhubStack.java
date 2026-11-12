@@ -8,6 +8,8 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
+import software.amazon.awscdk.services.cloudwatch.Alarm;
+import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -27,6 +29,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.ses.EmailIdentity;
 import software.amazon.awscdk.services.ses.Identity;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -72,6 +76,7 @@ public class FeedbackhubStack extends Stack {
 
         criarApiGateway();
         criarAgendamentoRelatorioSemanal();
+        criarMonitoramento();
     }
 
     private Table criarTabelaAvaliacoes() {
@@ -198,6 +203,41 @@ public class FeedbackhubStack extends Stack {
                         .build()))
                 .targets(List.of(new LambdaFunction(funcaoGerarRelatorioSemanal)))
                 .build();
+    }
+
+    private void criarMonitoramento() {
+        Topic topicoAlarmes = Topic.Builder.create(this, "TopicoAlarmesOperacionais")
+                .topicName("feedbackhub-alarmes")
+                .build();
+
+        topicoAlarmes.addSubscription(new EmailSubscription(emailAdmin));
+
+        criarAlarmeErros(funcaoReceberAvaliacao, "ReceberAvaliacao", topicoAlarmes);
+        criarAlarmeErros(funcaoNotificarCritico, "NotificarCritico", topicoAlarmes);
+        criarAlarmeErros(funcaoGerarRelatorioSemanal, "GerarRelatorioSemanal", topicoAlarmes);
+        criarAlarmeDlq(topicoAlarmes);
+    }
+
+    private void criarAlarmeErros(IFunction funcao, String nomeFuncao, Topic topico) {
+        Alarm alarme = Alarm.Builder.create(this, "Alarme" + nomeFuncao + "Erros")
+                .metric(funcao.metricErrors())
+                .threshold(1)
+                .evaluationPeriods(1)
+                .alarmDescription("Erros na Lambda " + nomeFuncao)
+                .build();
+
+        alarme.addAlarmAction(new SnsAction(topico));
+    }
+
+    private void criarAlarmeDlq(Topic topico) {
+        Alarm alarme = Alarm.Builder.create(this, "AlarmeDlqNotificacoesCriticas")
+                .metric(filaNotificacoesCriticasDlq.metricApproximateNumberOfMessagesVisible())
+                .threshold(1)
+                .evaluationPeriods(1)
+                .alarmDescription("Mensagens paradas na DLQ de notificacoes criticas")
+                .build();
+
+        alarme.addAlarmAction(new SnsAction(topico));
     }
 
     private Map<String, String> variaveisAmbienteComuns() {
