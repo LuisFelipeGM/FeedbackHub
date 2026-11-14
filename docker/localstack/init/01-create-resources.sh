@@ -13,14 +13,14 @@ awslocal dynamodb create-table \
       AttributeName=id,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST
 
-awslocal sqs create-queue --queue-name feedbackhub-notificacoes-criticas-dlq
+awslocal sqs create-queue --queue-name dlq-notificacoes-criticas
 
 DLQ_ARN=$(awslocal sqs get-queue-attributes \
-  --queue-url http://localhost:4566/000000000000/feedbackhub-notificacoes-criticas-dlq \
+  --queue-url http://localhost:4566/000000000000/dlq-notificacoes-criticas \
   --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
 
 awslocal sqs create-queue \
-  --queue-name feedbackhub-notificacoes-criticas \
+  --queue-name sqs-notificacoes-criticas \
   --attributes "{\"RedrivePolicy\":\"{\\\"deadLetterTargetArn\\\":\\\"${DLQ_ARN}\\\",\\\"maxReceiveCount\\\":\\\"3\\\"}\"}"
 
 awslocal s3 mb s3://feedbackhub-relatorios

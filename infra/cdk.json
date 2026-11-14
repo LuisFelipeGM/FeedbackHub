@@ -1,0 +1,4 @@
+{
+  "app": "./gradlew -q run",
+  "context": {}
+}
