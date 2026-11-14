@@ -247,6 +247,7 @@ public class FeedbackhubStack extends Stack {
         variaveis.put("S3_BUCKET_RELATORIOS", bucketRelatorios.getBucketName());
         variaveis.put("SES_REMETENTE", emailAdmin);
         variaveis.put("SES_DESTINATARIO_ADMIN", emailAdmin);
+        variaveis.put("TZ", "America/Sao_Paulo");
         return variaveis;
     }
 
