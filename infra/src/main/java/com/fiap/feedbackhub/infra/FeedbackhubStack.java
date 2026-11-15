@@ -20,6 +20,7 @@ import software.amazon.awscdk.services.cognito.StandardAttribute;
 import software.amazon.awscdk.services.cognito.StandardAttributes;
 import software.amazon.awscdk.services.cognito.UserPool;
 import software.amazon.awscdk.services.cognito.UserPoolClient;
+import software.amazon.awscdk.services.cognito.UserPoolOperation;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -66,6 +67,7 @@ public class FeedbackhubStack extends Stack {
     private DockerImageFunction funcaoReceberAvaliacao;
     private DockerImageFunction funcaoNotificarCritico;
     private DockerImageFunction funcaoGerarRelatorioSemanal;
+    private DockerImageFunction funcaoPosConfirmacao;
 
     public FeedbackhubStack(final Construct scope, final String id) {
         this(scope, id, null);
@@ -87,6 +89,7 @@ public class FeedbackhubStack extends Stack {
         criarFuncaoReceberAvaliacao();
         criarFuncaoNotificarCritico();
         criarFuncaoGerarRelatorioSemanal();
+        criarFuncaoPosConfirmacao();
 
         criarApiGateway();
         criarAgendamentoRelatorioSemanal();
@@ -240,6 +243,25 @@ public class FeedbackhubStack extends Stack {
         concederPermissaoSes(funcaoGerarRelatorioSemanal);
     }
 
+    private void criarFuncaoPosConfirmacao() {
+        funcaoPosConfirmacao = DockerImageFunction.Builder.create(this, "PosConfirmacaoFunction")
+                .code(imagemLambda)
+                .memorySize(512)
+                .timeout(Duration.seconds(10))
+                .environment(variaveisAmbienteComuns())
+                .build();
+
+        funcaoPosConfirmacao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "posConfirmacao");
+
+        funcaoPosConfirmacao.addToRolePolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("cognito-idp:AdminAddUserToGroup"))
+                .resources(List.of(userPool.getUserPoolArn()))
+                .build());
+
+        userPool.addTrigger(UserPoolOperation.POST_CONFIRMATION, funcaoPosConfirmacao);
+    }
+
     private void criarApiGateway() {
         RestApi restApi = RestApi.Builder.create(this, "FeedbackhubRestApi")
                 .restApiName("feedbackhub-api")
@@ -274,6 +296,7 @@ public class FeedbackhubStack extends Stack {
         criarAlarmeErros(funcaoReceberAvaliacao, "ReceberAvaliacao", topicoAlarmes);
         criarAlarmeErros(funcaoNotificarCritico, "NotificarCritico", topicoAlarmes);
         criarAlarmeErros(funcaoGerarRelatorioSemanal, "GerarRelatorioSemanal", topicoAlarmes);
+        criarAlarmeErros(funcaoPosConfirmacao, "PosConfirmacao", topicoAlarmes);
         criarAlarmeDlq(topicoAlarmes);
     }
 
