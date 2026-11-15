@@ -5,7 +5,10 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.apigateway.AuthorizationType;
+import software.amazon.awscdk.services.apigateway.CognitoUserPoolsAuthorizer;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+import software.amazon.awscdk.services.apigateway.MethodOptions;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
@@ -267,8 +270,15 @@ public class FeedbackhubStack extends Stack {
                 .restApiName("feedbackhub-api")
                 .build();
 
+        CognitoUserPoolsAuthorizer autorizadorCognito = CognitoUserPoolsAuthorizer.Builder.create(this, "AutorizadorCognito")
+                .cognitoUserPools(List.of(userPool))
+                .build();
+
         Resource recursoAvaliacao = restApi.getRoot().addResource("avaliacao");
-        recursoAvaliacao.addMethod("POST", new LambdaIntegration(funcaoReceberAvaliacao));
+        recursoAvaliacao.addMethod("POST", new LambdaIntegration(funcaoReceberAvaliacao), MethodOptions.builder()
+                .authorizationType(AuthorizationType.COGNITO)
+                .authorizer(autorizadorCognito)
+                .build());
 
         CfnOutput.Builder.create(this, "UrlApi")
                 .value(restApi.getUrl())

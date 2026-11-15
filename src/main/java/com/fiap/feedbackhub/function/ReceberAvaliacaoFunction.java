@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.feedbackhub.domain.dto.AvaliacaoDTO;
 import com.fiap.feedbackhub.service.AvaliacaoService;
+import com.fiap.feedbackhub.support.AutorizacaoSupport;
 import com.fiap.feedbackhub.support.RespostaApiGatewaySupport;
 import com.fiap.feedbackhub.support.ValidacaoSupport;
 import jakarta.validation.ConstraintViolation;
@@ -18,11 +19,17 @@ import java.util.function.Function;
 @Configuration
 public class ReceberAvaliacaoFunction {
 
+    private static final String GRUPO_ALUNO = "ALUNO";
+
     @Bean
     public Function<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> receberAvaliacao(
             ObjectMapper objectMapper, Validator validator, AvaliacaoService avaliacaoService) {
 
         return event -> {
+            if (!AutorizacaoSupport.possuiGrupo(event, GRUPO_ALUNO)) {
+                return RespostaApiGatewaySupport.resposta(403, "{\"erro\":\"Apenas alunos podem enviar avaliações\"}");
+            }
+
             AvaliacaoDTO avaliacaoDTO;
             try {
                 avaliacaoDTO = objectMapper.readValue(event.getBody(), AvaliacaoDTO.class);
