@@ -10,7 +10,12 @@ public final class AutorizacaoSupport {
     }
 
     public static boolean possuiGrupo(APIGatewayProxyRequestEvent event, String grupo) {
-        Map<String, Object> authorizer = event.getRequestContext().getAuthorizer();
+        APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = event.getRequestContext();
+        if (requestContext == null) {
+            return false;
+        }
+
+        Map<String, Object> authorizer = requestContext.getAuthorizer();
         if (authorizer == null) {
             return false;
         }
