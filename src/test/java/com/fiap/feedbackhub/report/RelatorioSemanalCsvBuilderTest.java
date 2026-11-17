@@ -69,4 +69,26 @@ class RelatorioSemanalCsvBuilderTest {
 
         assertThat(csv).contains("\"Aula boa, mas \"\"longa\"\"\",MEDIA,2026-11-01T10:00:00,Arquitetura Serverless");
     }
+
+    @Test
+    void deveEscaparTituloDeAulaComVirgula() {
+        String aulaComVirgula = "Mensageria com SQS, SNS e EventBridge";
+
+        RelatorioSemanalDTO relatorio = new RelatorioSemanalDTO(
+                LocalDate.of(2026, 11, 1),
+                LocalDate.of(2026, 11, 7),
+                5.0,
+                Map.of(),
+                Map.of(),
+                Map.of(aulaComVirgula, 1L),
+                Map.of(aulaComVirgula, 5.0),
+                List.of(new AvaliacaoResumoDTO("Aula boa", Urgencia.MEDIA, "2026-11-01T10:00:00", aulaComVirgula)));
+
+        String csv = csvBuilder.construir(relatorio);
+
+        assertThat(csv)
+                .contains("\"Mensageria com SQS, SNS e EventBridge\",5.00")
+                .contains("\"Mensageria com SQS, SNS e EventBridge\",1")
+                .contains("Aula boa,MEDIA,2026-11-01T10:00:00,\"Mensageria com SQS, SNS e EventBridge\"");
+    }
 }
