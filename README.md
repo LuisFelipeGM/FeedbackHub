@@ -306,6 +306,23 @@ Três fluxos acontecem fora do caminho síncrono da API:
 
 ---
 
+# 📧 Envio de E-mail (SES)
+
+Remetente e destinatário são configuráveis separadamente, via contexto da CDK ou variável de ambiente:
+
+| Papel | Contexto CDK | Variável de ambiente / secret | Usado em |
+|---|---|---|---|
+| Remetente | `remetenteEmail` | `SES_REMETENTE_EMAIL` | Cabeçalho `From` dos e-mails |
+| Destinatário/admin | `adminEmail` | `ADMIN_EMAIL` | Notificação crítica, relatório semanal e alarmes do CloudWatch |
+
+Se `remetenteEmail` não for informado, o remetente usa o mesmo endereço do destinatário (comportamento anterior à separação).
+
+A conta AWS deste projeto está em modo *sandbox* do SES, o que exige que **cada endereço envolvido** (remetente e destinatário) esteja verificado individualmente antes de qualquer envio funcionar. A stack CDK cria uma `EmailIdentity` para cada um dos dois endereços (uma só, se forem o mesmo), e a AWS manda um e-mail com um link de confirmação para cada identidade criada. É preciso clicar nesse link antes do primeiro deploy funcional.
+
+Na configuração atual do projeto, o remetente é o e-mail institucional da FIAP e o destinatário é um e-mail pessoal, e os dois foram verificados com sucesso.
+
+---
+
 # 📈 Monitoramento
 
 CloudWatch Alarms em cada uma das 5 Lambdas (métrica de erros, limiar de 1 invocação com erro) e na DLQ de notificações críticas (mensagens presas). Todos os alarmes publicam no mesmo tópico SNS (`feedbackhub-alarmes`), que notifica o admin por e-mail.

@@ -43,4 +43,5 @@ jobs:
         working-directory: infra
         env:
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          SES_REMETENTE_EMAIL: ${{ secrets.SES_REMETENTE_EMAIL }}
         run: cdk deploy --require-approval never

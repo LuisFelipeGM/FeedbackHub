@@ -68,6 +68,7 @@ public class FeedbackhubStack extends Stack {
     private final Queue filaNotificacoesCriticasDlq;
     private final Bucket bucketRelatorios;
     private final String emailAdmin;
+    private final String emailRemetente;
     private final DockerImageCode imagemLambda;
 
     private UserPool userPool;
@@ -87,6 +88,7 @@ public class FeedbackhubStack extends Stack {
         super(scope, id, props);
 
         this.emailAdmin = resolverEmailAdmin();
+        this.emailRemetente = resolverEmailRemetente();
         this.imagemLambda = DockerImageCode.fromImageAsset("..");
 
         this.tabelaAvaliacoes = criarTabelaAvaliacoes();
@@ -189,6 +191,12 @@ public class FeedbackhubStack extends Stack {
         EmailIdentity.Builder.create(this, "IdentidadeSesAdmin")
                 .identity(Identity.email(emailAdmin))
                 .build();
+
+        if (!emailRemetente.equals(emailAdmin)) {
+            EmailIdentity.Builder.create(this, "IdentidadeSesRemetente")
+                    .identity(Identity.email(emailRemetente))
+                    .build();
+        }
     }
 
     private void criarUserPool() {
@@ -248,6 +256,20 @@ public class FeedbackhubStack extends Stack {
         }
 
         return EMAIL_ADMIN_PADRAO;
+    }
+
+    private String resolverEmailRemetente() {
+        Object emailContexto = this.getNode().tryGetContext("remetenteEmail");
+        if (emailContexto != null) {
+            return emailContexto.toString();
+        }
+
+        String emailAmbiente = System.getenv("SES_REMETENTE_EMAIL");
+        if (emailAmbiente != null && !emailAmbiente.isBlank()) {
+            return emailAmbiente;
+        }
+
+        return emailAdmin;
     }
 
     private void criarFuncaoReceberAvaliacao() {
@@ -410,7 +432,7 @@ public class FeedbackhubStack extends Stack {
         variaveis.put("DYNAMODB_TABLE_AULAS", tabelaAulas.getTableName());
         variaveis.put("SQS_QUEUE_NOTIFICACOES_CRITICAS", filaNotificacoesCriticas.getQueueName());
         variaveis.put("S3_BUCKET_RELATORIOS", bucketRelatorios.getBucketName());
-        variaveis.put("SES_REMETENTE", emailAdmin);
+        variaveis.put("SES_REMETENTE", emailRemetente);
         variaveis.put("SES_DESTINATARIO_ADMIN", emailAdmin);
         variaveis.put("TZ", "America/Sao_Paulo");
         return variaveis;
