@@ -4,6 +4,7 @@ import com.fiap.feedbackhub.domain.entity.Avaliacao;
 import com.fiap.feedbackhub.email.RelatorioSemanalEmailSender;
 import com.fiap.feedbackhub.report.RelatorioSemanalCsvBuilder;
 import com.fiap.feedbackhub.report.RelatorioSemanalS3Uploader;
+import com.fiap.feedbackhub.repository.AulaRepository;
 import com.fiap.feedbackhub.repository.AvaliacaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ class RelatorioSemanalServiceTest {
     private AvaliacaoRepository avaliacaoRepository;
 
     @Mock
+    private AulaRepository aulaRepository;
+
+    @Mock
     private RelatorioSemanalCsvBuilder csvBuilder;
 
     @Mock
@@ -41,13 +45,15 @@ class RelatorioSemanalServiceTest {
 
     @BeforeEach
     void setup() {
-        relatorioSemanalService = new RelatorioSemanalService(avaliacaoRepository, csvBuilder, s3Uploader, emailSender);
+        relatorioSemanalService = new RelatorioSemanalService(
+                avaliacaoRepository, aulaRepository, csvBuilder, s3Uploader, emailSender);
     }
 
     @Test
     void deveConsultarOsSeteDiasAnterioresAgregarESalvarOrelatorio() {
         Avaliacao avaliacao = Avaliacao.novo("Aula boa", 8, "aula-teste", LocalDateTime.now());
         when(avaliacaoRepository.buscarPorData(any(LocalDate.class))).thenReturn(List.of(avaliacao));
+        when(aulaRepository.listarTodas()).thenReturn(List.of());
         when(csvBuilder.construir(any())).thenReturn("csv-gerado");
         when(s3Uploader.salvar(any(), eq("csv-gerado"))).thenReturn("relatorios/chave.csv");
 

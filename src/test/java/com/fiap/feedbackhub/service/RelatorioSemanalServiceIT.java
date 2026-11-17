@@ -1,6 +1,7 @@
 package com.fiap.feedbackhub.service;
 
 import com.fiap.feedbackhub.config.AbstractIT;
+import com.fiap.feedbackhub.config.LocalStackContainerSingleton;
 import com.fiap.feedbackhub.domain.entity.Avaliacao;
 import com.fiap.feedbackhub.repository.AvaliacaoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,9 +60,9 @@ class RelatorioSemanalServiceIT extends AbstractIT {
     void deveGerarRelatorioComAsAvaliacoesDoPeriodoESalvarNoS3() {
         LocalDate hoje = LocalDate.now();
 
-        avaliacaoRepository.salvar(Avaliacao.novo("Aula dentro do período", 7, "aula-teste",
+        avaliacaoRepository.salvar(Avaliacao.novo("Aula dentro do período", 7, LocalStackContainerSingleton.AULA_TESTE_ID,
                 LocalDateTime.of(hoje.minusDays(3), LocalTime.of(10, 0))));
-        avaliacaoRepository.salvar(Avaliacao.novo("Aula fora do período", 7, "aula-teste",
+        avaliacaoRepository.salvar(Avaliacao.novo("Aula fora do período", 7, LocalStackContainerSingleton.AULA_TESTE_ID,
                 LocalDateTime.of(hoje, LocalTime.of(10, 0))));
 
         relatorioSemanalService.gerar();
@@ -82,6 +83,7 @@ class RelatorioSemanalServiceIT extends AbstractIT {
         String csv = conteudo.asUtf8String();
         assertThat(csv)
                 .contains("Aula dentro do período")
-                .doesNotContain("Aula fora do período");
+                .doesNotContain("Aula fora do período")
+                .contains("Aula de Teste");
     }
 }

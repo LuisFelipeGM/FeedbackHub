@@ -293,6 +293,7 @@ public class FeedbackhubStack extends Stack {
         funcaoGerarRelatorioSemanal.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "gerarRelatorioSemanal");
 
         tabelaAvaliacoes.grantReadData(funcaoGerarRelatorioSemanal);
+        tabelaAulas.grantReadData(funcaoGerarRelatorioSemanal);
         bucketRelatorios.grantWrite(funcaoGerarRelatorioSemanal);
         concederPermissaoSes(funcaoGerarRelatorioSemanal);
     }
