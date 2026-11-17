@@ -249,7 +249,7 @@ public class FeedbackhubStack extends Stack {
     private void criarFuncaoPosConfirmacao() {
         funcaoPosConfirmacao = DockerImageFunction.Builder.create(this, "PosConfirmacaoFunction")
                 .code(imagemLambda)
-                .memorySize(512)
+                .memorySize(1024)
                 .timeout(Duration.seconds(10))
                 .environment(variaveisAmbienteComuns())
                 .build();
@@ -259,7 +259,7 @@ public class FeedbackhubStack extends Stack {
         funcaoPosConfirmacao.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("cognito-idp:AdminAddUserToGroup"))
-                .resources(List.of(userPool.getUserPoolArn()))
+                .resources(List.of("*"))
                 .build());
 
         userPool.addTrigger(UserPoolOperation.POST_CONFIRMATION, funcaoPosConfirmacao);

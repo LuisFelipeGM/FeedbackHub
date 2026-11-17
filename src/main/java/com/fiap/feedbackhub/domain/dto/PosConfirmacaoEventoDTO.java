@@ -6,8 +6,12 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PosConfirmacaoEventoDTO(
+        String version,
+        String triggerSource,
+        String region,
         String userPoolId,
         String userName,
+        Object callerContext,
         RequestDTO request,
         Map<String, Object> response
 ) {

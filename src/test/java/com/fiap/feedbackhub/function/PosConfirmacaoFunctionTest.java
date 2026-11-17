@@ -30,8 +30,12 @@ class PosConfirmacaoFunctionTest {
     @Test
     void deveAtribuirGrupoAlunoERetornarOMesmoEvento() {
         PosConfirmacaoEventoDTO event = new PosConfirmacaoEventoDTO(
+                "1",
+                "PostConfirmation_ConfirmSignUp",
+                "us-east-1",
                 "us-east-1_abc123",
                 "a1b2c3d4",
+                Map.of("clientId", "clientIdTeste"),
                 new PosConfirmacaoEventoDTO.RequestDTO(Map.of("email", "aluno@exemplo.com")),
                 Map.of());
 
