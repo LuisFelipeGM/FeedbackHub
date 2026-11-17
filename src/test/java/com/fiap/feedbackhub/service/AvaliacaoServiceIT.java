@@ -1,6 +1,7 @@
 package com.fiap.feedbackhub.service;
 
 import com.fiap.feedbackhub.config.AbstractIT;
+import com.fiap.feedbackhub.config.LocalStackContainerSingleton;
 import com.fiap.feedbackhub.domain.dto.AvaliacaoDTO;
 import com.fiap.feedbackhub.domain.entity.Avaliacao;
 import com.fiap.feedbackhub.repository.AvaliacaoRepository;
@@ -19,8 +20,10 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 class AvaliacaoServiceIT extends AbstractIT {
@@ -62,7 +65,7 @@ class AvaliacaoServiceIT extends AbstractIT {
 
     @Test
     void devePersistirENaoPublicarQuandoUrgenciaNaoForAlta() {
-        avaliacaoService.registrar(new AvaliacaoDTO(9, "Aula excelente"));
+        avaliacaoService.registrar(new AvaliacaoDTO(9, "Aula excelente", LocalStackContainerSingleton.AULA_TESTE_ID));
 
         List<Avaliacao> encontradas = avaliacaoRepository.buscarPorData(LocalDate.now());
         assertThat(encontradas).hasSize(1);
@@ -71,7 +74,7 @@ class AvaliacaoServiceIT extends AbstractIT {
 
     @Test
     void devePersistirEPublicarQuandoUrgenciaForAlta() {
-        avaliacaoService.registrar(new AvaliacaoDTO(1, "Aula muito ruim, professor não apareceu"));
+        avaliacaoService.registrar(new AvaliacaoDTO(1, "Aula muito ruim, professor não apareceu", LocalStackContainerSingleton.AULA_TESTE_ID));
 
         List<Avaliacao> encontradas = avaliacaoRepository.buscarPorData(LocalDate.now());
         assertThat(encontradas).hasSize(1);
@@ -81,6 +84,14 @@ class AvaliacaoServiceIT extends AbstractIT {
         assertThat(mensagens.getFirst().body())
                 .contains("ALTA")
                 .contains("Aula muito ruim");
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoAulaNaoExiste() {
+        assertThatThrownBy(() -> avaliacaoService.registrar(new AvaliacaoDTO(9, "Aula excelente", "aula-inexistente")))
+                .isInstanceOf(NoSuchElementException.class);
+
+        assertThat(avaliacaoRepository.buscarPorData(LocalDate.now())).isEmpty();
     }
 
     private List<Message> receberMensagens() {

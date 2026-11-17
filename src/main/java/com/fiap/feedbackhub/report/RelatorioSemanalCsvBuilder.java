@@ -26,12 +26,26 @@ public class RelatorioSemanalCsvBuilder {
                 csv.append(urgencia).append(",").append(quantidade).append("\n"));
         csv.append("\n");
 
+        csv.append("Media de notas por aula\n");
+        csv.append("aula,media\n");
+        relatorio.mediaNotasPorAula().forEach((aula, media) -> csv
+                .append(escaparCsv(aula)).append(",")
+                .append(String.format(Locale.US, "%.2f", media)).append("\n"));
+        csv.append("\n");
+
+        csv.append("Quantidade de avaliacoes por aula\n");
+        csv.append("aula,quantidade\n");
+        relatorio.quantidadePorAula().forEach((aula, quantidade) ->
+                csv.append(escaparCsv(aula)).append(",").append(quantidade).append("\n"));
+        csv.append("\n");
+
         csv.append("Avaliacoes do periodo\n");
-        csv.append("descricao,urgencia,dataEnvio\n");
+        csv.append("descricao,urgencia,dataEnvio,aula\n");
         relatorio.avaliacoes().forEach(avaliacao -> csv
                 .append(escaparCsv(avaliacao.descricao())).append(",")
                 .append(avaliacao.urgencia()).append(",")
-                .append(avaliacao.dataEnvio()).append("\n"));
+                .append(avaliacao.dataEnvio()).append(",")
+                .append(escaparCsv(avaliacao.aulaTitulo())).append("\n"));
 
         return csv.toString();
     }

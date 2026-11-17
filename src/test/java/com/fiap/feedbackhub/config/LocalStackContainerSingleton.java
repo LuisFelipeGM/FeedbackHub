@@ -7,10 +7,12 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.ses.SesClient;
@@ -30,6 +32,8 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 public final class LocalStackContainerSingleton {
 
     private static final String TABELA_AVALIACOES = "Avaliacoes";
+    private static final String TABELA_AULAS = "Aulas";
+    public static final String AULA_TESTE_ID = "aula-teste";
     private static final String FILA_NOTIFICACOES_CRITICAS = "sqs-notificacoes-criticas";
     private static final String FILA_NOTIFICACOES_CRITICAS_DLQ = "dlq-notificacoes-criticas";
     private static final String BUCKET_RELATORIOS = "feedbackhub-relatorios";
@@ -42,6 +46,7 @@ public final class LocalStackContainerSingleton {
     static {
         INSTANCE.start();
         criarTabelaAvaliacoes();
+        criarTabelaAulas();
         criarFilaNotificacoesCriticas();
         criarBucketRelatorios();
         verificarIdentidadeSes();
@@ -65,6 +70,26 @@ public final class LocalStackContainerSingleton {
                             KeySchemaElement.builder().attributeName("data").keyType(KeyType.HASH).build(),
                             KeySchemaElement.builder().attributeName("id").keyType(KeyType.RANGE).build())
                     .billingMode(BillingMode.PAY_PER_REQUEST)
+                    .build());
+        }
+    }
+
+    private static void criarTabelaAulas() {
+        try (DynamoDbClient dynamoDbClient = dynamoDbClient()) {
+            dynamoDbClient.createTable(CreateTableRequest.builder()
+                    .tableName(TABELA_AULAS)
+                    .attributeDefinitions(
+                            AttributeDefinition.builder().attributeName("id").attributeType(ScalarAttributeType.S).build())
+                    .keySchema(
+                            KeySchemaElement.builder().attributeName("id").keyType(KeyType.HASH).build())
+                    .billingMode(BillingMode.PAY_PER_REQUEST)
+                    .build());
+
+            dynamoDbClient.putItem(PutItemRequest.builder()
+                    .tableName(TABELA_AULAS)
+                    .item(Map.of(
+                            "id", AttributeValue.fromS(AULA_TESTE_ID),
+                            "titulo", AttributeValue.fromS("Aula de Teste")))
                     .build());
         }
     }

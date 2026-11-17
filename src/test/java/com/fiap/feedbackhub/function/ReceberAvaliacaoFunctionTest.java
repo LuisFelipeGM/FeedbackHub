@@ -16,11 +16,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -42,12 +44,23 @@ class ReceberAvaliacaoFunctionTest {
 
     @Test
     void deveRetornar201QuandoPayloadValido() {
-        APIGatewayProxyRequestEvent event = eventoComGrupo("ALUNO", "{\"descricao\":\"Aula boa\",\"nota\":8}");
+        APIGatewayProxyRequestEvent event = eventoComGrupo("ALUNO", "{\"descricao\":\"Aula boa\",\"nota\":8,\"aulaId\":\"aula-01\"}");
 
         APIGatewayProxyResponseEvent resposta = receberAvaliacao.apply(event);
 
         assertThat(resposta.getStatusCode()).isEqualTo(201);
         verify(avaliacaoService).registrar(any());
+    }
+
+    @Test
+    void deveRetornar404QuandoAulaNaoExiste() {
+        doThrow(new NoSuchElementException("Aula não encontrada")).when(avaliacaoService).registrar(any());
+
+        APIGatewayProxyRequestEvent event = eventoComGrupo("ALUNO", "{\"descricao\":\"Aula boa\",\"nota\":8,\"aulaId\":\"aula-inexistente\"}");
+
+        APIGatewayProxyResponseEvent resposta = receberAvaliacao.apply(event);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(404);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -85,8 +98,9 @@ class ReceberAvaliacaoFunctionTest {
 
     private static Stream<Arguments> payloadsInvalidos() {
         return Stream.of(
-                Arguments.of("nota fora do intervalo", "{\"descricao\":\"Aula boa\",\"nota\":15}"),
-                Arguments.of("descricao em branco", "{\"descricao\":\"\",\"nota\":5}"),
+                Arguments.of("nota fora do intervalo", "{\"descricao\":\"Aula boa\",\"nota\":15,\"aulaId\":\"aula-01\"}"),
+                Arguments.of("descricao em branco", "{\"descricao\":\"\",\"nota\":5,\"aulaId\":\"aula-01\"}"),
+                Arguments.of("aulaId em branco", "{\"descricao\":\"Aula boa\",\"nota\":5,\"aulaId\":\"\"}"),
                 Arguments.of("json invalido", "não é json")
         );
     }

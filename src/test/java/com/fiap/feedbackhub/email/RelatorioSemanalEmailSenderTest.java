@@ -47,7 +47,9 @@ class RelatorioSemanalEmailSenderTest {
                 7.5,
                 Map.of(),
                 Map.of(),
-                List.of(new AvaliacaoResumoDTO("Aula boa", Urgencia.BAIXA, "2026-11-01T10:00:00")));
+                Map.of(),
+                Map.of(),
+                List.of(new AvaliacaoResumoDTO("Aula boa", Urgencia.BAIXA, "2026-11-01T10:00:00", "Aula de Teste")));
 
         emailSender.enviar(relatorio, "relatorios/2026-11-01_2026-11-07.csv", "conteudo,do,csv");
 

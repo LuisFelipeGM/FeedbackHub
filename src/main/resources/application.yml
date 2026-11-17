@@ -6,6 +6,7 @@ aws:
   region: ${AWS_REGION:us-east-1}
   dynamodb:
     tabela-avaliacoes: ${DYNAMODB_TABLE_AVALIACOES:Avaliacoes}
+    tabela-aulas: ${DYNAMODB_TABLE_AULAS:Aulas}
   sqs:
     fila-notificacoes-criticas: ${SQS_QUEUE_NOTIFICACOES_CRITICAS:sqs-notificacoes-criticas}
   s3:

@@ -24,6 +24,11 @@ import software.amazon.awscdk.services.cognito.StandardAttributes;
 import software.amazon.awscdk.services.cognito.UserPool;
 import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.amazon.awscdk.services.cognito.UserPoolOperation;
+import software.amazon.awscdk.customresources.AwsCustomResource;
+import software.amazon.awscdk.customresources.AwsCustomResourcePolicy;
+import software.amazon.awscdk.customresources.AwsSdkCall;
+import software.amazon.awscdk.customresources.PhysicalResourceId;
+import software.amazon.awscdk.customresources.SdkCallsPolicyOptions;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -58,6 +63,7 @@ public class FeedbackhubStack extends Stack {
     private static final String EMAIL_ADMIN_PADRAO = "admin@feedbackhub.local";
 
     private final Table tabelaAvaliacoes;
+    private final Table tabelaAulas;
     private final Queue filaNotificacoesCriticas;
     private final Queue filaNotificacoesCriticasDlq;
     private final Bucket bucketRelatorios;
@@ -71,6 +77,7 @@ public class FeedbackhubStack extends Stack {
     private DockerImageFunction funcaoNotificarCritico;
     private DockerImageFunction funcaoGerarRelatorioSemanal;
     private DockerImageFunction funcaoPosConfirmacao;
+    private DockerImageFunction funcaoListarAulas;
 
     public FeedbackhubStack(final Construct scope, final String id) {
         this(scope, id, null);
@@ -83,6 +90,8 @@ public class FeedbackhubStack extends Stack {
         this.imagemLambda = DockerImageCode.fromImageAsset("..");
 
         this.tabelaAvaliacoes = criarTabelaAvaliacoes();
+        this.tabelaAulas = criarTabelaAulas();
+        semearTabelaAulas(tabelaAulas);
         this.filaNotificacoesCriticasDlq = criarFilaNotificacoesCriticasDlq();
         this.filaNotificacoesCriticas = criarFilaNotificacoesCriticas(filaNotificacoesCriticasDlq);
         this.bucketRelatorios = criarBucketRelatorios();
@@ -93,6 +102,7 @@ public class FeedbackhubStack extends Stack {
         criarFuncaoNotificarCritico();
         criarFuncaoGerarRelatorioSemanal();
         criarFuncaoPosConfirmacao();
+        criarFuncaoListarAulas();
 
         criarApiGateway();
         criarAgendamentoRelatorioSemanal();
@@ -107,6 +117,46 @@ public class FeedbackhubStack extends Stack {
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
+    }
+
+    private Table criarTabelaAulas() {
+        return Table.Builder.create(this, "TabelaAulas")
+                .tableName("Aulas")
+                .partitionKey(Attribute.builder().name("id").type(AttributeType.STRING).build())
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .build();
+    }
+
+    private void semearTabelaAulas(Table tabela) {
+        AwsSdkCall seedCall = AwsSdkCall.builder()
+                .service("DynamoDB")
+                .action("batchWriteItem")
+                .parameters(Map.of(
+                        "RequestItems", Map.of(
+                                tabela.getTableName(), List.of(
+                                        itemAula("aula-01", "Introdução à Arquitetura Serverless"),
+                                        itemAula("aula-02", "AWS Lambda e Funções de Responsabilidade Única"),
+                                        itemAula("aula-03", "Mensageria com SQS, SNS e EventBridge")))))
+                .physicalResourceId(PhysicalResourceId.of("SeedTabelaAulas"))
+                .build();
+
+        AwsCustomResource seed = AwsCustomResource.Builder.create(this, "SeedTabelaAulas")
+                .onCreate(seedCall)
+                .policy(AwsCustomResourcePolicy.fromSdkCalls(SdkCallsPolicyOptions.builder()
+                        .resources(List.of(tabela.getTableArn()))
+                        .build()))
+                .build();
+
+        seed.getNode().addDependency(tabela);
+    }
+
+    private Map<String, Object> itemAula(String id, String titulo) {
+        return Map.of(
+                "PutRequest", Map.of(
+                        "Item", Map.of(
+                                "id", Map.of("S", id),
+                                "titulo", Map.of("S", titulo))));
     }
 
     private Queue criarFilaNotificacoesCriticasDlq() {
@@ -211,6 +261,7 @@ public class FeedbackhubStack extends Stack {
         funcaoReceberAvaliacao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "receberAvaliacao");
 
         tabelaAvaliacoes.grantWriteData(funcaoReceberAvaliacao);
+        tabelaAulas.grantReadData(funcaoReceberAvaliacao);
         filaNotificacoesCriticas.grantSendMessages(funcaoReceberAvaliacao);
     }
 
@@ -242,6 +293,7 @@ public class FeedbackhubStack extends Stack {
         funcaoGerarRelatorioSemanal.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "gerarRelatorioSemanal");
 
         tabelaAvaliacoes.grantReadData(funcaoGerarRelatorioSemanal);
+        tabelaAulas.grantReadData(funcaoGerarRelatorioSemanal);
         bucketRelatorios.grantWrite(funcaoGerarRelatorioSemanal);
         concederPermissaoSes(funcaoGerarRelatorioSemanal);
     }
@@ -265,6 +317,19 @@ public class FeedbackhubStack extends Stack {
         userPool.addTrigger(UserPoolOperation.POST_CONFIRMATION, funcaoPosConfirmacao);
     }
 
+    private void criarFuncaoListarAulas() {
+        funcaoListarAulas = DockerImageFunction.Builder.create(this, "ListarAulasFunction")
+                .code(imagemLambda)
+                .memorySize(512)
+                .timeout(Duration.seconds(10))
+                .environment(variaveisAmbienteComuns())
+                .build();
+
+        funcaoListarAulas.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "listarAulas");
+
+        tabelaAulas.grantReadData(funcaoListarAulas);
+    }
+
     private void criarApiGateway() {
         RestApi restApi = RestApi.Builder.create(this, "FeedbackhubRestApi")
                 .restApiName("feedbackhub-api")
@@ -276,6 +341,12 @@ public class FeedbackhubStack extends Stack {
 
         Resource recursoAvaliacao = restApi.getRoot().addResource("avaliacao");
         recursoAvaliacao.addMethod("POST", new LambdaIntegration(funcaoReceberAvaliacao), MethodOptions.builder()
+                .authorizationType(AuthorizationType.COGNITO)
+                .authorizer(autorizadorCognito)
+                .build());
+
+        Resource recursoAulas = restApi.getRoot().addResource("aulas");
+        recursoAulas.addMethod("GET", new LambdaIntegration(funcaoListarAulas), MethodOptions.builder()
                 .authorizationType(AuthorizationType.COGNITO)
                 .authorizer(autorizadorCognito)
                 .build());
@@ -307,6 +378,7 @@ public class FeedbackhubStack extends Stack {
         criarAlarmeErros(funcaoNotificarCritico, "NotificarCritico", topicoAlarmes);
         criarAlarmeErros(funcaoGerarRelatorioSemanal, "GerarRelatorioSemanal", topicoAlarmes);
         criarAlarmeErros(funcaoPosConfirmacao, "PosConfirmacao", topicoAlarmes);
+        criarAlarmeErros(funcaoListarAulas, "ListarAulas", topicoAlarmes);
         criarAlarmeDlq(topicoAlarmes);
     }
 
@@ -335,6 +407,7 @@ public class FeedbackhubStack extends Stack {
     private Map<String, String> variaveisAmbienteComuns() {
         Map<String, String> variaveis = new HashMap<>();
         variaveis.put("DYNAMODB_TABLE_AVALIACOES", tabelaAvaliacoes.getTableName());
+        variaveis.put("DYNAMODB_TABLE_AULAS", tabelaAulas.getTableName());
         variaveis.put("SQS_QUEUE_NOTIFICACOES_CRITICAS", filaNotificacoesCriticas.getQueueName());
         variaveis.put("S3_BUCKET_RELATORIOS", bucketRelatorios.getBucketName());
         variaveis.put("SES_REMETENTE", emailAdmin);

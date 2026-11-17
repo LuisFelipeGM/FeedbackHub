@@ -25,13 +25,21 @@ class RelatorioSemanalCsvBuilderTest {
         Map<Urgencia, Long> quantidadePorUrgencia = new EnumMap<>(Urgencia.class);
         quantidadePorUrgencia.put(Urgencia.ALTA, 1L);
 
+        Map<String, Long> quantidadePorAula = new TreeMap<>();
+        quantidadePorAula.put("Arquitetura Serverless", 2L);
+
+        Map<String, Double> mediaNotasPorAula = new TreeMap<>();
+        mediaNotasPorAula.put("Arquitetura Serverless", 3.5);
+
         RelatorioSemanalDTO relatorio = new RelatorioSemanalDTO(
                 LocalDate.of(2026, 11, 1),
                 LocalDate.of(2026, 11, 7),
                 6.5,
                 quantidadePorDia,
                 quantidadePorUrgencia,
-                List.of(new AvaliacaoResumoDTO("Aula ruim", Urgencia.ALTA, "2026-11-01T10:00:00")));
+                quantidadePorAula,
+                mediaNotasPorAula,
+                List.of(new AvaliacaoResumoDTO("Aula ruim", Urgencia.ALTA, "2026-11-01T10:00:00", "Arquitetura Serverless")));
 
         String csv = csvBuilder.construir(relatorio);
 
@@ -40,7 +48,9 @@ class RelatorioSemanalCsvBuilderTest {
                 .contains("Media de notas,6.50")
                 .contains("2026-11-01,2")
                 .contains("ALTA,1")
-                .contains("Aula ruim,ALTA,2026-11-01T10:00:00");
+                .contains("Arquitetura Serverless,3.50")
+                .contains("Arquitetura Serverless,2")
+                .contains("Aula ruim,ALTA,2026-11-01T10:00:00,Arquitetura Serverless");
     }
 
     @Test
@@ -51,10 +61,34 @@ class RelatorioSemanalCsvBuilderTest {
                 5.0,
                 Map.of(),
                 Map.of(),
-                List.of(new AvaliacaoResumoDTO("Aula boa, mas \"longa\"", Urgencia.MEDIA, "2026-11-01T10:00:00")));
+                Map.of(),
+                Map.of(),
+                List.of(new AvaliacaoResumoDTO("Aula boa, mas \"longa\"", Urgencia.MEDIA, "2026-11-01T10:00:00", "Arquitetura Serverless")));
 
         String csv = csvBuilder.construir(relatorio);
 
-        assertThat(csv).contains("\"Aula boa, mas \"\"longa\"\"\",MEDIA,2026-11-01T10:00:00");
+        assertThat(csv).contains("\"Aula boa, mas \"\"longa\"\"\",MEDIA,2026-11-01T10:00:00,Arquitetura Serverless");
+    }
+
+    @Test
+    void deveEscaparTituloDeAulaComVirgula() {
+        String aulaComVirgula = "Mensageria com SQS, SNS e EventBridge";
+
+        RelatorioSemanalDTO relatorio = new RelatorioSemanalDTO(
+                LocalDate.of(2026, 11, 1),
+                LocalDate.of(2026, 11, 7),
+                5.0,
+                Map.of(),
+                Map.of(),
+                Map.of(aulaComVirgula, 1L),
+                Map.of(aulaComVirgula, 5.0),
+                List.of(new AvaliacaoResumoDTO("Aula boa", Urgencia.MEDIA, "2026-11-01T10:00:00", aulaComVirgula)));
+
+        String csv = csvBuilder.construir(relatorio);
+
+        assertThat(csv)
+                .contains("\"Mensageria com SQS, SNS e EventBridge\",5.00")
+                .contains("\"Mensageria com SQS, SNS e EventBridge\",1")
+                .contains("Aula boa,MEDIA,2026-11-01T10:00:00,\"Mensageria com SQS, SNS e EventBridge\"");
     }
 }

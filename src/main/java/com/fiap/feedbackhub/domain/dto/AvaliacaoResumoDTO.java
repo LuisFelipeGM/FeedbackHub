@@ -6,13 +6,15 @@ import com.fiap.feedbackhub.domain.enumeration.Urgencia;
 public record AvaliacaoResumoDTO(
         String descricao,
         Urgencia urgencia,
-        String dataEnvio
+        String dataEnvio,
+        String aulaTitulo
 ) {
 
-    public static AvaliacaoResumoDTO de(Avaliacao avaliacao) {
+    public static AvaliacaoResumoDTO de(Avaliacao avaliacao, String aulaTitulo) {
         return new AvaliacaoResumoDTO(
                 avaliacao.getDescricao(),
                 avaliacao.getUrgencia(),
-                avaliacao.getDataHoraEnvio());
+                avaliacao.getDataHoraEnvio(),
+                aulaTitulo);
     }
 }

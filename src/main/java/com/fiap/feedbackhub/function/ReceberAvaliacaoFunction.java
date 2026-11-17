@@ -13,6 +13,7 @@ import jakarta.validation.Validator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -43,7 +44,12 @@ public class ReceberAvaliacaoFunction {
                 return RespostaApiGatewaySupport.resposta(400, erro);
             }
 
-            avaliacaoService.registrar(avaliacaoDTO);
+            try {
+                avaliacaoService.registrar(avaliacaoDTO);
+            } catch (NoSuchElementException e) {
+                return RespostaApiGatewaySupport.resposta(404, "{\"erro\":\"Aula não encontrada\"}");
+            }
+
             return RespostaApiGatewaySupport.resposta(201, "{\"status\":\"recebido\"}");
         };
     }

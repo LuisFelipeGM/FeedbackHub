@@ -13,6 +13,9 @@ public record AvaliacaoDTO(
         Integer nota,
 
         @NotBlank(message = "descricao é obrigatória")
-        String descricao
+        String descricao,
+
+        @NotBlank(message = "aulaId é obrigatório")
+        String aulaId
 ) {
 }

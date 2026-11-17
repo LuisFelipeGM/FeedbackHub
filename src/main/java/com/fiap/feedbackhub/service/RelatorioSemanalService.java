@@ -1,32 +1,40 @@
 package com.fiap.feedbackhub.service;
 
 import com.fiap.feedbackhub.domain.dto.RelatorioSemanalDTO;
+import com.fiap.feedbackhub.domain.entity.Aula;
 import com.fiap.feedbackhub.domain.entity.Avaliacao;
 import com.fiap.feedbackhub.email.RelatorioSemanalEmailSender;
 import com.fiap.feedbackhub.report.RelatorioSemanalCsvBuilder;
 import com.fiap.feedbackhub.report.RelatorioSemanalS3Uploader;
+import com.fiap.feedbackhub.repository.AulaRepository;
 import com.fiap.feedbackhub.repository.AvaliacaoRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class RelatorioSemanalService {
 
     private final AvaliacaoRepository avaliacaoRepository;
+    private final AulaRepository aulaRepository;
     private final RelatorioSemanalCsvBuilder csvBuilder;
     private final RelatorioSemanalS3Uploader s3Uploader;
     private final RelatorioSemanalEmailSender emailSender;
 
     public RelatorioSemanalService(
             AvaliacaoRepository avaliacaoRepository,
+            AulaRepository aulaRepository,
             RelatorioSemanalCsvBuilder csvBuilder,
             RelatorioSemanalS3Uploader s3Uploader,
             RelatorioSemanalEmailSender emailSender
     ) {
         this.avaliacaoRepository = avaliacaoRepository;
+        this.aulaRepository = aulaRepository;
         this.csvBuilder = csvBuilder;
         this.s3Uploader = s3Uploader;
         this.emailSender = emailSender;
@@ -37,8 +45,10 @@ public class RelatorioSemanalService {
         LocalDate dataInicio = dataFim.minusDays(6);
 
         List<Avaliacao> avaliacoesDaSemana = buscarAvaliacoesDoPeriodo(dataInicio, dataFim);
+        Map<String, Aula> aulasPorId = aulaRepository.listarTodas().stream()
+                .collect(Collectors.toMap(Aula::getId, Function.identity()));
 
-        RelatorioSemanalDTO relatorio = RelatorioSemanalDTO.calcular(avaliacoesDaSemana, dataInicio, dataFim);
+        RelatorioSemanalDTO relatorio = RelatorioSemanalDTO.calcular(avaliacoesDaSemana, aulasPorId, dataInicio, dataFim);
         String csv = csvBuilder.construir(relatorio);
         String chaveS3 = s3Uploader.salvar(relatorio, csv);
         emailSender.enviar(relatorio, chaveS3, csv);
