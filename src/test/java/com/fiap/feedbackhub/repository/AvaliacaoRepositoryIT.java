@@ -14,7 +14,7 @@ class AvaliacaoRepositoryIT extends BaseRepositoryIT {
     @Test
     void deveSalvarEBuscarAvaliacaoPorData() {
         LocalDateTime momento = LocalDateTime.of(2026, 11, 4, 10, 15, 30);
-        Avaliacao avaliacao = Avaliacao.novo("Aula muito boa", 9, momento);
+        Avaliacao avaliacao = Avaliacao.novo("Aula muito boa", 9, "aula-teste", momento);
 
         avaliacaoRepository.salvar(avaliacao);
 

@@ -17,6 +17,9 @@ public abstract class BaseRepositoryIT extends AbstractIT {
     protected AvaliacaoRepository avaliacaoRepository;
 
     @Autowired
+    protected AulaRepository aulaRepository;
+
+    @Autowired
     private DynamoDbEnhancedClient enhancedClient;
 
     @Value("${aws.dynamodb.tabela-avaliacoes}")

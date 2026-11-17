@@ -59,9 +59,9 @@ class RelatorioSemanalServiceIT extends AbstractIT {
     void deveGerarRelatorioComAsAvaliacoesDoPeriodoESalvarNoS3() {
         LocalDate hoje = LocalDate.now();
 
-        avaliacaoRepository.salvar(Avaliacao.novo("Aula dentro do período", 7,
+        avaliacaoRepository.salvar(Avaliacao.novo("Aula dentro do período", 7, "aula-teste",
                 LocalDateTime.of(hoje.minusDays(3), LocalTime.of(10, 0))));
-        avaliacaoRepository.salvar(Avaliacao.novo("Aula fora do período", 7,
+        avaliacaoRepository.salvar(Avaliacao.novo("Aula fora do período", 7, "aula-teste",
                 LocalDateTime.of(hoje, LocalTime.of(10, 0))));
 
         relatorioSemanalService.gerar();

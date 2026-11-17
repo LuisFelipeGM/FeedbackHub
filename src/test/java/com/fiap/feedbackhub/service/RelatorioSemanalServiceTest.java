@@ -46,7 +46,7 @@ class RelatorioSemanalServiceTest {
 
     @Test
     void deveConsultarOsSeteDiasAnterioresAgregarESalvarOrelatorio() {
-        Avaliacao avaliacao = Avaliacao.novo("Aula boa", 8, LocalDateTime.now());
+        Avaliacao avaliacao = Avaliacao.novo("Aula boa", 8, "aula-teste", LocalDateTime.now());
         when(avaliacaoRepository.buscarPorData(any(LocalDate.class))).thenReturn(List.of(avaliacao));
         when(csvBuilder.construir(any())).thenReturn("csv-gerado");
         when(s3Uploader.salvar(any(), eq("csv-gerado"))).thenReturn("relatorios/chave.csv");

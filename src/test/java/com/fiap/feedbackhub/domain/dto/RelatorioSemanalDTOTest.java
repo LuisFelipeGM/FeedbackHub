@@ -19,9 +19,9 @@ class RelatorioSemanalDTOTest {
         LocalDate dataFim = LocalDate.of(2026, 11, 2);
 
         List<Avaliacao> avaliacoes = List.of(
-                Avaliacao.novo("Aula ótima", 9, LocalDateTime.of(2026, 11, 1, 10, 0)),
-                Avaliacao.novo("Aula ruim", 2, LocalDateTime.of(2026, 11, 1, 11, 0)),
-                Avaliacao.novo("Aula mediana", 5, LocalDateTime.of(2026, 11, 2, 9, 0))
+                Avaliacao.novo("Aula ótima", 9, "aula-teste", LocalDateTime.of(2026, 11, 1, 10, 0)),
+                Avaliacao.novo("Aula ruim", 2, "aula-teste", LocalDateTime.of(2026, 11, 1, 11, 0)),
+                Avaliacao.novo("Aula mediana", 5, "aula-teste", LocalDateTime.of(2026, 11, 2, 9, 0))
         );
 
         RelatorioSemanalDTO relatorio = RelatorioSemanalDTO.calcular(avaliacoes, dataInicio, dataFim);
