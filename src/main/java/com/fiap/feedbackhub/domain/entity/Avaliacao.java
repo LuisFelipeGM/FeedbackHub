@@ -23,15 +23,17 @@ public class Avaliacao {
     private Integer nota;
     private Urgencia urgencia;
     private String descricao;
+    private String aulaId;
     private String data;
     private String dataHoraEnvio;
 
-    public static Avaliacao novo(String descricao, int nota, LocalDateTime momento) {
+    public static Avaliacao novo(String descricao, int nota, String aulaId, LocalDateTime momento) {
         Avaliacao avaliacao = new Avaliacao();
         avaliacao.setId(UUID.randomUUID());
         avaliacao.setNota(nota);
         avaliacao.setUrgencia(Urgencia.apartirDaNota(nota));
         avaliacao.setDescricao(descricao);
+        avaliacao.setAulaId(aulaId);
         avaliacao.setData(momento.toLocalDate().toString());
         avaliacao.setDataHoraEnvio(momento.toString());
         return avaliacao;
