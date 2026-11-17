@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -41,8 +42,7 @@ class ReceberAvaliacaoFunctionTest {
 
     @Test
     void deveRetornar201QuandoPayloadValido() {
-        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent()
-                .withBody("{\"descricao\":\"Aula boa\",\"nota\":8}");
+        APIGatewayProxyRequestEvent event = eventoComGrupo("ALUNO", "{\"descricao\":\"Aula boa\",\"nota\":8}");
 
         APIGatewayProxyResponseEvent resposta = receberAvaliacao.apply(event);
 
@@ -53,12 +53,33 @@ class ReceberAvaliacaoFunctionTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("payloadsInvalidos")
     void deveRetornar400ParaPayloadsInvalidos(String cenario, String body) {
-        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent()
-                .withBody(body);
+        APIGatewayProxyRequestEvent event = eventoComGrupo("ALUNO", body);
 
         APIGatewayProxyResponseEvent resposta = receberAvaliacao.apply(event);
 
         assertThat(resposta.getStatusCode()).isEqualTo(400);
+        verify(avaliacaoService, never()).registrar(any());
+    }
+
+    @Test
+    void deveRetornar403QuandoUsuarioNaoEhAluno() {
+        APIGatewayProxyRequestEvent event = eventoComGrupo("ADMIN", "{\"descricao\":\"Aula boa\",\"nota\":8}");
+
+        APIGatewayProxyResponseEvent resposta = receberAvaliacao.apply(event);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(403);
+        verify(avaliacaoService, never()).registrar(any());
+    }
+
+    @Test
+    void deveRetornar403QuandoNaoHaGrupoNoToken() {
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent()
+                .withBody("{\"descricao\":\"Aula boa\",\"nota\":8}")
+                .withRequestContext(new APIGatewayProxyRequestEvent.ProxyRequestContext());
+
+        APIGatewayProxyResponseEvent resposta = receberAvaliacao.apply(event);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(403);
         verify(avaliacaoService, never()).registrar(any());
     }
 
@@ -68,5 +89,16 @@ class ReceberAvaliacaoFunctionTest {
                 Arguments.of("descricao em branco", "{\"descricao\":\"\",\"nota\":5}"),
                 Arguments.of("json invalido", "não é json")
         );
+    }
+
+    private APIGatewayProxyRequestEvent eventoComGrupo(String grupo, String body) {
+        Map<String, Object> claims = Map.of("cognito:groups", "[" + grupo + "]");
+        Map<String, Object> authorizer = Map.of("claims", claims);
+        APIGatewayProxyRequestEvent.ProxyRequestContext requestContext = new APIGatewayProxyRequestEvent.ProxyRequestContext();
+        requestContext.setAuthorizer(authorizer);
+
+        return new APIGatewayProxyRequestEvent()
+                .withBody(body)
+                .withRequestContext(requestContext);
     }
 }

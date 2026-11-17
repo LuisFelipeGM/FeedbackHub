@@ -5,11 +5,25 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.apigateway.AuthorizationType;
+import software.amazon.awscdk.services.apigateway.CognitoUserPoolsAuthorizer;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+import software.amazon.awscdk.services.apigateway.MethodOptions;
 import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
+import software.amazon.awscdk.services.cognito.AccountRecovery;
+import software.amazon.awscdk.services.cognito.AuthFlow;
+import software.amazon.awscdk.services.cognito.AutoVerifiedAttrs;
+import software.amazon.awscdk.services.cognito.CfnUserPoolGroup;
+import software.amazon.awscdk.services.cognito.PasswordPolicy;
+import software.amazon.awscdk.services.cognito.SignInAliases;
+import software.amazon.awscdk.services.cognito.StandardAttribute;
+import software.amazon.awscdk.services.cognito.StandardAttributes;
+import software.amazon.awscdk.services.cognito.UserPool;
+import software.amazon.awscdk.services.cognito.UserPoolClient;
+import software.amazon.awscdk.services.cognito.UserPoolOperation;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -50,9 +64,13 @@ public class FeedbackhubStack extends Stack {
     private final String emailAdmin;
     private final DockerImageCode imagemLambda;
 
+    private UserPool userPool;
+    private UserPoolClient userPoolClient;
+
     private DockerImageFunction funcaoReceberAvaliacao;
     private DockerImageFunction funcaoNotificarCritico;
     private DockerImageFunction funcaoGerarRelatorioSemanal;
+    private DockerImageFunction funcaoPosConfirmacao;
 
     public FeedbackhubStack(final Construct scope, final String id) {
         this(scope, id, null);
@@ -69,10 +87,12 @@ public class FeedbackhubStack extends Stack {
         this.filaNotificacoesCriticas = criarFilaNotificacoesCriticas(filaNotificacoesCriticasDlq);
         this.bucketRelatorios = criarBucketRelatorios();
         criarIdentidadeSes();
+        criarUserPool();
 
         criarFuncaoReceberAvaliacao();
         criarFuncaoNotificarCritico();
         criarFuncaoGerarRelatorioSemanal();
+        criarFuncaoPosConfirmacao();
 
         criarApiGateway();
         criarAgendamentoRelatorioSemanal();
@@ -118,6 +138,51 @@ public class FeedbackhubStack extends Stack {
     private void criarIdentidadeSes() {
         EmailIdentity.Builder.create(this, "IdentidadeSesAdmin")
                 .identity(Identity.email(emailAdmin))
+                .build();
+    }
+
+    private void criarUserPool() {
+        userPool = UserPool.Builder.create(this, "UserPoolFeedbackhub")
+                .userPoolName("feedbackhub-users")
+                .selfSignUpEnabled(true)
+                .signInAliases(SignInAliases.builder().email(true).build())
+                .autoVerify(AutoVerifiedAttrs.builder().email(true).build())
+                .standardAttributes(StandardAttributes.builder()
+                        .email(StandardAttribute.builder().required(true).mutable(true).build())
+                        .build())
+                .passwordPolicy(PasswordPolicy.builder()
+                        .minLength(8)
+                        .requireLowercase(true)
+                        .requireUppercase(true)
+                        .requireDigits(true)
+                        .requireSymbols(false)
+                        .build())
+                .accountRecovery(AccountRecovery.EMAIL_ONLY)
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .build();
+
+        userPoolClient = UserPoolClient.Builder.create(this, "UserPoolClientFeedbackhub")
+                .userPool(userPool)
+                .generateSecret(false)
+                .authFlows(AuthFlow.builder().userPassword(true).build())
+                .build();
+
+        CfnUserPoolGroup.Builder.create(this, "GrupoAdmin")
+                .userPoolId(userPool.getUserPoolId())
+                .groupName("ADMIN")
+                .build();
+
+        CfnUserPoolGroup.Builder.create(this, "GrupoAluno")
+                .userPoolId(userPool.getUserPoolId())
+                .groupName("ALUNO")
+                .build();
+
+        CfnOutput.Builder.create(this, "UserPoolId")
+                .value(userPool.getUserPoolId())
+                .build();
+
+        CfnOutput.Builder.create(this, "UserPoolClientId")
+                .value(userPoolClient.getUserPoolClientId())
                 .build();
     }
 
@@ -181,13 +246,39 @@ public class FeedbackhubStack extends Stack {
         concederPermissaoSes(funcaoGerarRelatorioSemanal);
     }
 
+    private void criarFuncaoPosConfirmacao() {
+        funcaoPosConfirmacao = DockerImageFunction.Builder.create(this, "PosConfirmacaoFunction")
+                .code(imagemLambda)
+                .memorySize(1024)
+                .timeout(Duration.seconds(10))
+                .environment(variaveisAmbienteComuns())
+                .build();
+
+        funcaoPosConfirmacao.addEnvironment("SPRING_CLOUD_FUNCTION_DEFINITION", "posConfirmacao");
+
+        funcaoPosConfirmacao.addToRolePolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("cognito-idp:AdminAddUserToGroup"))
+                .resources(List.of("*"))
+                .build());
+
+        userPool.addTrigger(UserPoolOperation.POST_CONFIRMATION, funcaoPosConfirmacao);
+    }
+
     private void criarApiGateway() {
         RestApi restApi = RestApi.Builder.create(this, "FeedbackhubRestApi")
                 .restApiName("feedbackhub-api")
                 .build();
 
+        CognitoUserPoolsAuthorizer autorizadorCognito = CognitoUserPoolsAuthorizer.Builder.create(this, "AutorizadorCognito")
+                .cognitoUserPools(List.of(userPool))
+                .build();
+
         Resource recursoAvaliacao = restApi.getRoot().addResource("avaliacao");
-        recursoAvaliacao.addMethod("POST", new LambdaIntegration(funcaoReceberAvaliacao));
+        recursoAvaliacao.addMethod("POST", new LambdaIntegration(funcaoReceberAvaliacao), MethodOptions.builder()
+                .authorizationType(AuthorizationType.COGNITO)
+                .authorizer(autorizadorCognito)
+                .build());
 
         CfnOutput.Builder.create(this, "UrlApi")
                 .value(restApi.getUrl())
@@ -215,6 +306,7 @@ public class FeedbackhubStack extends Stack {
         criarAlarmeErros(funcaoReceberAvaliacao, "ReceberAvaliacao", topicoAlarmes);
         criarAlarmeErros(funcaoNotificarCritico, "NotificarCritico", topicoAlarmes);
         criarAlarmeErros(funcaoGerarRelatorioSemanal, "GerarRelatorioSemanal", topicoAlarmes);
+        criarAlarmeErros(funcaoPosConfirmacao, "PosConfirmacao", topicoAlarmes);
         criarAlarmeDlq(topicoAlarmes);
     }
 
