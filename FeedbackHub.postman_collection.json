@@ -1,0 +1,944 @@
+{
+  "info": {
+    "_postman_id": "5c6dc533-201e-4cbe-ab11-f5d892f5c173",
+    "name": "FeedbackHub",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23735733"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sucesso",
+          "item": [
+            {
+              "name": "Sign-Up Cognito (Aluno)",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.SignUp"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ClientId\": \"{{clientId}}\",\n  \"Username\": \"{{emailAluno}}\",\n  \"Password\": \"{{senhaAluno}}\",\n  \"UserAttributes\": [\n    { \"Name\": \"email\", \"Value\": \"{{emailAluno}}\" }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Confirm Sign-Up Cognito (Aluno)",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.ConfirmSignUp"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ClientId\": \"{{clientId}}\",\n  \"Username\": \"{{emailAluno}}\",\n  \"ConfirmationCode\": \"COLE_O_CODIGO_RECEBIDO_POR_EMAIL\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login Cognito (Aluno)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"token\", pm.response.json().AuthenticationResult.IdToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.InitiateAuth"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"AuthFlow\": \"USER_PASSWORD_AUTH\",\n  \"ClientId\": \"{{clientId}}\",\n  \"AuthParameters\": {\n    \"USERNAME\": \"{{emailAluno}}\",\n    \"PASSWORD\": \"{{senhaAluno}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login Cognito (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"tokenAdmin\", pm.response.json().AuthenticationResult.IdToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.InitiateAuth"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"AuthFlow\": \"USER_PASSWORD_AUTH\",\n  \"ClientId\": \"{{clientId}}\",\n  \"AuthParameters\": {\n    \"USERNAME\": \"{{emailAdmin}}\",\n    \"PASSWORD\": \"{{senhaAdmin}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                },
+                "description": "Pré-requisito: usuário ADMIN criado manualmente (ver README, seção \"Administradores\"), com senha já definida como permanente via admin-set-user-password --permanent."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Erro",
+          "item": [
+            {
+              "name": "Erro Sign-Up - Senha Fraca",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.SignUp"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ClientId\": \"{{clientId}}\",\n  \"Username\": \"senha.fraca.teste@exemplo.com\",\n  \"Password\": \"abcdefgh\",\n  \"UserAttributes\": [\n    { \"Name\": \"email\", \"Value\": \"senha.fraca.teste@exemplo.com\" }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                },
+                "description": "Senha sem maiúscula e sem dígito — viola a PasswordPolicy do User Pool. Esperado: InvalidPasswordException."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro Sign-Up - Usuário Já Existe",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.SignUp"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ClientId\": \"{{clientId}}\",\n  \"Username\": \"{{emailAluno}}\",\n  \"Password\": \"{{senhaAluno}}\",\n  \"UserAttributes\": [\n    { \"Name\": \"email\", \"Value\": \"{{emailAluno}}\" }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                },
+                "description": "Só produz o erro depois que \"Sign-Up Cognito (Aluno)\" já tiver sido executado com sucesso pelo menos uma vez. Esperado: UsernameExistsException."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro Confirm Sign-Up - Código Inválido",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.ConfirmSignUp"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ClientId\": \"{{clientId}}\",\n  \"Username\": \"{{emailAluno}}\",\n  \"ConfirmationCode\": \"000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                },
+                "description": "Código propositalmente errado. Esperado: CodeMismatchException. Só funciona com um usuário ainda não confirmado."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro Login - Senha Incorreta",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.InitiateAuth"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"AuthFlow\": \"USER_PASSWORD_AUTH\",\n  \"ClientId\": \"{{clientId}}\",\n  \"AuthParameters\": {\n    \"USERNAME\": \"{{emailAluno}}\",\n    \"PASSWORD\": \"SenhaErrada999!\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                },
+                "description": "Esperado: NotAuthorizedException (\"Incorrect username or password\")."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro Login - Usuário Não Encontrado",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.InitiateAuth"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"AuthFlow\": \"USER_PASSWORD_AUTH\",\n  \"ClientId\": \"{{clientId}}\",\n  \"AuthParameters\": {\n    \"USERNAME\": \"naoexiste@exemplo.com\",\n    \"PASSWORD\": \"SenhaForte123!\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                },
+                "description": "Esperado: UserNotFoundException."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro Login - Usuário Não Confirmado",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-amz-json-1.1"
+                  },
+                  {
+                    "key": "X-Amz-Target",
+                    "value": "AWSCognitoIdentityProviderService.InitiateAuth"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"AuthFlow\": \"USER_PASSWORD_AUTH\",\n  \"ClientId\": \"{{clientId}}\",\n  \"AuthParameters\": {\n    \"USERNAME\": \"{{emailAluno}}\",\n    \"PASSWORD\": \"{{senhaAluno}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{cognitoEndpoint}}",
+                  "host": [
+                    "{{cognitoEndpoint}}"
+                  ]
+                },
+                "description": "Rode \"Sign-Up Cognito (Aluno)\" com um e-mail novo e NÃO confirme antes de tentar este login. Esperado: UserNotConfirmedException."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Avaliar",
+      "item": [
+        {
+          "name": "Sucesso",
+          "item": [
+            {
+              "name": "Avaliar Aula - Urgência Alta (crítica)",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"Aula ruim, professor não apareceu\",\r\n    \"nota\": 2,\r\n    \"aulaId\": \"aula-01\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "Nota <= 3 => Urgencia.ALTA => dispara notificação crítica por e-mail ao admin. Esperado: 201."
+              },
+              "response": []
+            },
+            {
+              "name": "Avaliar Aula - Urgência Média",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"Aula razoável, podia melhorar\",\r\n    \"nota\": 5,\r\n    \"aulaId\": \"aula-02\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "Nota entre 4 e 7 => Urgencia.MEDIA => só persiste, sem notificação. Esperado: 201."
+              },
+              "response": []
+            },
+            {
+              "name": "Avaliar Aula - Urgência Baixa",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"Aula excelente, muito bem explicada\",\r\n    \"nota\": 9,\r\n    \"aulaId\": \"aula-03\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "Nota >= 8 => Urgencia.BAIXA => só persiste, sem notificação. Esperado: 201."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Erro",
+          "item": [
+            {
+              "name": "Erro 401 - Sem Token",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"Aula boa\",\r\n    \"nota\": 8,\r\n    \"aulaId\": \"aula-01\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "Sem header Authorization. Rejeitado pelo Cognito Authorizer do API Gateway, nem chega na Lambda. Esperado: 401."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro 401 - Token Inválido",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "token-invalido-123"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"descricao\":\"Aula boa\",\"nota\":8,\"aulaId\":\"aula-01\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "Token que não é um JWT válido do User Pool. Esperado: 401."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro 403 - Usuário Não É Aluno (Admin)",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{tokenAdmin}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"descricao\":\"Aula boa\",\"nota\":8,\"aulaId\":\"aula-01\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "Token válido (passa pelo Authorizer), mas o usuário está no grupo ADMIN, não ALUNO. Rejeitado pela nossa Lambda (AutorizacaoSupport). Esperado: 403. Rode antes \"Login Cognito (Admin)\"."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro 400 - Nota Fora do Intervalo",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"Aula boa\",\r\n    \"nota\": 15,\r\n    \"aulaId\": \"aula-01\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "nota fora do intervalo 0-10. Esperado: 400."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro 400 - Descrição em Branco",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"\",\r\n    \"nota\": 5,\r\n    \"aulaId\": \"aula-01\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "descricao em branco. Esperado: 400."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro 400 - JSON Inválido",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "não é json",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "corpo não é um JSON válido. Esperado: 400."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro 400 - AulaId em Branco",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"Aula boa\",\r\n    \"nota\": 8,\r\n    \"aulaId\": \"\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "aulaId em branco. Esperado: 400."
+              },
+              "response": []
+            },
+            {
+              "name": "Erro 404 - Aula Não Encontrada",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"descricao\": \"Aula boa\",\r\n    \"nota\": 8,\r\n    \"aulaId\": \"aula-inexistente\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/avaliacao",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "avaliacao"
+                  ]
+                },
+                "description": "aulaId não existe na tabela Aulas (fixa, semeada via Custom Resource no deploy). Esperado: 404."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Aulas",
+      "item": [
+        {
+          "name": "Sucesso",
+          "item": [
+            {
+              "name": "Listar Aulas",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "{{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/aulas",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "aulas"
+                  ]
+                },
+                "description": "Lista as aulas fixas semeadas no deploy. Qualquer usuário autenticado pode consultar (ALUNO ou ADMIN). Esperado: 200 com a lista de aulas."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Erro",
+          "item": [
+            {
+              "name": "Erro 401 - Sem Token",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlAvaliacao}}/aulas",
+                  "host": [
+                    "{{baseUrlAvaliacao}}"
+                  ],
+                  "path": [
+                    "aulas"
+                  ]
+                },
+                "description": "Sem header Authorization. Esperado: 401."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "cognitoEndpoint",
+      "value": "https://cognito-idp.us-east-1.amazonaws.com/"
+    },
+    {
+      "key": "baseUrlAvaliacao",
+      "value": "https://ruxb0umcz9.execute-api.us-east-1.amazonaws.com/prod"
+    },
+    {
+      "key": "clientId",
+      "value": "20ba0tufh18vccv8rclvjhepq7"
+    },
+    {
+      "key": "emailAluno",
+      "value": "lipe.garcia.menezes@hotmail.com"
+    },
+    {
+      "key": "senhaAluno",
+      "value": "SenhaForte123!"
+    },
+    {
+      "key": "emailAdmin",
+      "value": "canal.zelderon@gmail.com"
+    },
+    {
+      "key": "senhaAdmin",
+      "value": "SenhaForte123!"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    }
+  ]
+}
