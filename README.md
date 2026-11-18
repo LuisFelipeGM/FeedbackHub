@@ -26,9 +26,9 @@ O FeedbackHub é uma plataforma de feedback de aulas construída **inteiramente 
 
 ---
 ## Entregavéis:
-📄 *PDF do desafio aqui)*
+📄 [4 Fase - FeedbackHub - Tech Challenge.pdf](4%20Fase%20-%20FeedbackHub%20-%20Tech%20Challenge.pdf)
 ---
-🎥 *(link do vídeo de apresentação aqui)*
+🎥 [Vídeo de Apresentação](https://www.youtube.com/watch?v=5UEcnk05u9k)
 ---
 
 # 🎯 Visão Geral
