@@ -52,6 +52,7 @@ public class RelatorioSemanalService {
         String csv = csvBuilder.construir(relatorio);
         String chaveS3 = s3Uploader.salvar(relatorio, csv);
         emailSender.enviar(relatorio, chaveS3, csv);
+        System.out.println("Relatório semanal gerado e enviado com sucesso! **MOSTRANDO DEPLOY AUTOMATIZADO**");
     }
 
     private List<Avaliacao> buscarAvaliacoesDoPeriodo(LocalDate dataInicio, LocalDate dataFim) {
